@@ -7,7 +7,7 @@
     <title>Tebak-Tebakan Seru - Seberapa Kenal Kamu Sama Aku? 🎮</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts Inter & Poppins -->
+    <!-- Google Fonts Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -83,7 +83,7 @@
             </div>
             <h1 class="text-3xl md:text-4xl font-bold text-indigo-900 mb-3">Hai, <span id="welcome-name" class="text-indigo-600"></span>! 👋</h1>
             <p class="text-gray-600 mb-8 text-sm md:text-base leading-relaxed">
-                Tantang teman, sahabat, atau gebetan buat jawab tebak-tebakan seru tentang kebiasaan, preferensi, atau hal random tentangmu! 🎯
+                Tantang teman, sahabat, atau kenalan buat jawab tebak-tebakan pilihan ganda maupun ketik jawaban (uraian) tentangmu! 🎯
             </p>
 
             <div class="space-y-4">
@@ -124,11 +124,22 @@
 
             <!-- Question Box -->
             <div class="mb-8">
-                <h2 id="question-text" class="text-xl sm:text-2xl font-bold text-gray-800 text-center mb-6">
+                <span id="question-type-badge" class="inline-block text-xs font-semibold px-2.5 py-1 bg-violet-100 text-violet-700 rounded-md mb-3">Pilihan Ganda</span>
+                <h2 id="question-text" class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">
                     Memuat pertanyaan...
                 </h2>
+                
+                <!-- Multiple Choice Container -->
                 <div id="options-container" class="space-y-3">
                     <!-- Dynamic Options will be injected here -->
+                </div>
+
+                <!-- Essay / Text Input Container -->
+                <div id="essay-container" class="space-y-3 hidden">
+                    <textarea id="essay-input" rows="3" placeholder="Ketik jawabanmu di sini..." class="w-full p-4 rounded-2xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-sm shadow-sm"></textarea>
+                    <button onclick="submitEssayAnswer()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-2xl shadow transition flex items-center justify-center gap-2">
+                        Kirim Jawaban <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -161,6 +172,7 @@
 
     </main>
 
+    <!-- MODAL CUSTOM QUIZ -->
     <div id="modal-custom" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel w-full max-w-lg rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -172,31 +184,47 @@
                 </button>
             </div>
             <p class="text-xs text-gray-500 mb-6">
-                Buat pertanyaan seru versi kamu sendiri, lalu salin link-nya dan kirim ke teman untuk ditantang!
+                Buat pertanyaan versi kamu sendiri (Pilihan Ganda atau Uraian/Ketik), lalu salin link-nya dan kirim ke teman untuk ditantang!
             </p>
 
             <form id="form-add-question" onsubmit="saveCustomQuestion(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Pertanyaan Kamu</label>
-                    <input type="text" id="input-q" required placeholder="Contoh: Apa kebiasaanku kalau lagi nunggu makanan?" class="w-full px-4 py-2.5 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-semibold text-gray-700">Pilihan Jawaban (4 Pilihan)</label>
-                    <input type="text" id="input-opt-0" required placeholder="Pilihan A (Misal: Main HP / Scroll TikTok)" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
-                    <input type="text" id="input-opt-1" required placeholder="Pilihan B (Misal: Nyanyi-nyanyi sendiri)" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
-                    <input type="text" id="input-opt-2" required placeholder="Pilihan C (Misal: Ngeliatin orang)" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
-                    <input type="text" id="input-opt-3" required placeholder="Pilihan D (Misal: Tidur di meja)" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                    <input type="text" id="input-q" required placeholder="Contoh: Apa makanan favoritku kalau lagi hujan?" class="w-full px-4 py-2.5 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Jawaban yang Benar</label>
-                    <select id="input-correct" class="w-full px-4 py-2.5 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
-                        <option value="0">Pilihan A</option>
-                        <option value="1">Pilihan B</option>
-                        <option value="2">Pilihan C</option>
-                        <option value="3">Pilihan D</option>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Tipe Pertanyaan</label>
+                    <select id="input-type" onchange="toggleQuestionTypeInput()" class="w-full px-4 py-2.5 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                        <option value="choice">Pilihan Ganda (A, B, C, D)</option>
+                        <option value="essay">Uraian / Ketik Jawaban Bebas</option>
                     </select>
+                </div>
+
+                <!-- Multiple Choice Options Group -->
+                <div id="group-choices" class="space-y-2">
+                    <label class="block text-xs font-semibold text-gray-700">Pilihan Jawaban (4 Pilihan)</label>
+                    <input type="text" id="input-opt-0" placeholder="Pilihan A" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                    <input type="text" id="input-opt-1" placeholder="Pilihan B" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                    <input type="text" id="input-opt-2" placeholder="Pilihan C" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                    <input type="text" id="input-opt-3" placeholder="Pilihan D" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1 mt-2">Jawaban yang Benar</label>
+                        <select id="input-correct" class="w-full px-4 py-2.5 rounded-xl border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/90 text-sm">
+                            <option value="0">Pilihan A</option>
+                            <option value="1">Pilihan B</option>
+                            <option value="2">Pilihan C</option>
+                            <option value="3">Pilihan D</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Essay Info Group -->
+                <div id="group-essay" class="space-y-2 hidden">
+                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-700">
+                        <i class="fa-solid fa-circle-info"></i> Soal uraian tidak memerlukan kata kunci. Jawaban yang diketik temanmu akan otomatis dikirim kembali ke kamu lewat link laporan hasil! ✨
+                    </div>
                 </div>
 
                 <button type="submit" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow transition">
@@ -211,6 +239,16 @@
                 </div>
             </div>
 
+            <!-- Inbox / Submissions from Friends -->
+            <div id="inbox-section" class="mt-6 pt-4 border-t border-indigo-100 hidden">
+                <h4 class="text-sm font-semibold text-indigo-900 mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-inbox text-indigo-600"></i> Jawaban Masuk dari Teman (<span id="inbox-count">0</span>)
+                </h4>
+                <div id="inbox-list" class="space-y-3 max-h-48 overflow-y-auto text-xs pr-1">
+                    <!-- Dynamic incoming responses inbox -->
+                </div>
+            </div>
+
             <div class="mt-4 flex gap-2">
                 <button onclick="generateShareableLink()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-share-nodes"></i> Salin Link Kuis Kustom
@@ -222,6 +260,7 @@
         </div>
     </div>
 
+    <!-- TOAST NOTIFICATION -->
     <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 text-sm">
         <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toast-msg">Berhasil!</span>
@@ -232,32 +271,33 @@
     </footer>
 
     <script>
-        // Default Classic Questions (Fun & Casual hangout style)
+        // Default Classic Questions
         const classicQuestions = [
             {
+                type: "choice",
                 question: "Kalau lagi nongkrong atau jalan, minuman apa yang paling sering aku pesan?",
                 options: ["Kopi susu / Es kopi", "Teh manis / Es teh", "Boba / Milk tea", "Air mineral aja cukup"],
                 correct: 0
             },
             {
+                type: "essay",
+                question: "Sebutkan satu kata yang paling sering aku ucapkan kalau lagi ngobrol!"
+            },
+            {
+                type: "choice",
                 question: "Apa hal yang paling bikin aku males atau bad mood di jalan?",
                 options: ["Terjebak macet parah", "Ketinggalan barang penting", "HP lowbat pas lagi darurat", "Ketemu orang ribet"],
                 correct: 0
             },
             {
-                question: "Genre film atau series apa yang paling sering aku tonton?",
-                options: ["Action / Sci-Fi", "Comedy / Sitcom", "Horror / Thriller", "Romance / Drama"],
-                correct: 1
+                type: "essay",
+                question: "Menurutmu, kalau aku punya waktu libur seharian penuh, biasanya aku ngapain?"
             },
             {
+                type: "choice",
                 question: "Jam berapa biasanya aku tidur kalau lagi libur besoknya?",
                 options: ["Jam 9-10 malam (Anak teladan)", "Tengah malam (12-1 pagi)", "Begadang subuh (di atas jam 2)", "Tergantung mood / insomnia"],
                 correct: 2
-            },
-            {
-                question: "Seberapa jago kamu mengira-ngira kebiasaanku?",
-                options: ["Pasti 100% bener dong!", "Kira-kira setengah bener", "Untung-untungan sih haha", "Emang aku cenayang? wkwk"],
-                correct: 0
             }
         ];
 
@@ -266,10 +306,15 @@
         let score = 0;
         let username = localStorage.getItem('kenalaku_username') || '';
         let customQuestions = JSON.parse(localStorage.getItem('kenalaku_custom') || '[]');
+        let creatorInbox = JSON.parse(localStorage.getItem('kenalaku_inbox') || '[]');
+        let activeQuizAnswers = []; // Records user's answers for essay reporting back
+        let isPlayingCustomMode = false;
+        let originalCreatorParam = null;
 
-        // Check URL parameters for shared custom questions on load
+        // Check URL parameters for shared custom questions and inbox feedback on load
         window.addEventListener('DOMContentLoaded', () => {
             updateCustomUI();
+            updateInboxUI();
             
             if (username) {
                 document.getElementById('current-username-text').innerText = username;
@@ -282,16 +327,42 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const sharedData = urlParams.get('data');
+            const feedbackData = urlParams.get('feedback');
+
             if (sharedData) {
                 try {
-                    const decoded = JSON.parse(atob(sharedData));
-                    if (Array.isArray(decoded) && decoded.length > 0) {
-                        customQuestions = decoded;
+                    const parsedObj = JSON.parse(atob(sharedData));
+                    if (Array.isArray(parsedObj)) {
+                        customQuestions = parsedObj;
                         updateCustomUI();
                         showToast("Berhasil memuat kuis tantangan dari teman! 🚀");
+                    } else if (parsedObj && parsedObj.questions) {
+                        customQuestions = parsedObj.questions;
+                        originalCreatorParam = parsedObj.creator || 'Teman';
+                        updateCustomUI();
+                        showToast("Kuis dari " + originalCreatorParam + " berhasil dimuat! ✨");
                     }
                 } catch (e) {
                     console.error("Gagal memuat link kuis kustom", e);
+                }
+            }
+
+            // If the original creator opens a feedback report link from their friend
+            if (feedbackData) {
+                try {
+                    const feedbackObj = JSON.parse(atob(feedbackData));
+                    if (feedbackObj && feedbackObj.respondent) {
+                        // Save to creator inbox
+                        creatorInbox.unshift(feedbackObj);
+                        localStorage.setItem('kenalaku_inbox', JSON.stringify(creatorInbox));
+                        updateInboxUI();
+                        // Clean URL parameter without reloading
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        openCustomQuizModal();
+                        showToast("📩 Wah, ada jawaban baru masuk dari " + feedbackObj.respondent + "!");
+                    }
+                } catch (err) {
+                    console.error("Gagal memproses feedback", err);
                 }
             }
         });
@@ -327,7 +398,7 @@
                 btnPlay.classList.remove('hidden');
                 listContainer.innerHTML = customQuestions.map((q, idx) => `
                     <div class="flex justify-between items-center bg-indigo-50/80 p-2 rounded-lg border border-indigo-100">
-                        <span class="truncate max-w-[280px] font-medium text-gray-700">${idx + 1}. ${q.question}</span>
+                        <span class="truncate max-w-[280px] font-medium text-gray-700">${idx + 1}. [${q.type === 'essay' ? 'Uraian' : 'PG'}] ${q.question}</span>
                         <button onclick="deleteCustomQuestion(${idx})" class="text-indigo-500 hover:text-indigo-700 p-1"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `).join('');
@@ -335,6 +406,43 @@
                 btnPlay.classList.add('hidden');
                 listContainer.innerHTML = '<p class="text-gray-400 italic">Belum ada soal buatan. Yuk buat sekarang!</p>';
             }
+        }
+
+        function updateInboxUI() {
+            const inboxSec = document.getElementById('inbox-section');
+            const inboxCount = document.getElementById('inbox-count');
+            const inboxList = document.getElementById('inbox-list');
+
+            inboxCount.innerText = creatorInbox.length;
+            if (creatorInbox.length > 0) {
+                inboxSec.classList.remove('hidden');
+                inboxList.innerHTML = creatorInbox.map((item, idx) => `
+                    <div class="bg-indigo-50/90 border border-indigo-200 rounded-xl p-3 text-gray-700">
+                        <div class="flex justify-between items-center font-bold text-indigo-900 mb-1">
+                            <span><i class="fa-solid fa-user-check text-indigo-600"></i> ${item.respondent}</span>
+                            <span class="text-[10px] text-indigo-500 font-normal">Skor: ${item.score}%</span>
+                        </div>
+                        <div class="space-y-1 mt-2 text-xs">
+                            ${item.answers.map(ans => `
+                                <div class="bg-white/80 p-2 rounded border border-indigo-100">
+                                    <p class="font-semibold text-gray-600">Q: ${ans.question}</p>
+                                    <p class="text-indigo-700 font-medium">Jawaban: "${ans.answer}"</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="deleteInboxItem(${idx})" class="mt-2 text-[10px] text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Hapus Pesan Ini</button>
+                    </div>
+                `).join('');
+            } else {
+                inboxSec.classList.add('hidden');
+            }
+        }
+
+        function deleteInboxItem(idx) {
+            creatorInbox.splice(idx, 1);
+            localStorage.setItem('kenalaku_inbox', JSON.stringify(creatorInbox));
+            updateInboxUI();
+            showToast("Pesan jawaban dihapus.");
         }
 
         function switchView(viewName) {
@@ -357,6 +465,7 @@
         function startQuiz(type) {
             if (type === 'classic') {
                 currentQuestions = [...classicQuestions];
+                isPlayingCustomMode = false;
             } else {
                 if (customQuestions.length === 0) {
                     showToast("Belum ada soal buatan! Buat dulu ya.");
@@ -364,9 +473,11 @@
                     return;
                 }
                 currentQuestions = [...customQuestions];
+                isPlayingCustomMode = true;
             }
             currentIndex = 0;
             score = 0;
+            activeQuizAnswers = [];
             switchView('quiz');
             loadQuestion();
         }
@@ -381,22 +492,69 @@
 
             document.getElementById('question-text').innerText = q.question;
 
+            const badge = document.getElementById('question-type-badge');
             const optsContainer = document.getElementById('options-container');
-            optsContainer.innerHTML = '';
+            const essayContainer = document.getElementById('essay-container');
 
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full py-3.5 px-5 bg-white/90 hover:bg-indigo-50 border border-indigo-200 rounded-2xl text-left font-medium text-gray-700 transition shadow-sm hover:border-indigo-400 flex items-center justify-between group";
-                btn.innerHTML = `<span>${opt}</span> <i class="fa-solid fa-chevron-right text-indigo-300 group-hover:text-indigo-600 transition"></i>`;
-                btn.onclick = () => selectAnswer(idx, q.correct);
-                optsContainer.appendChild(btn);
-            });
+            if (q.type === 'essay') {
+                badge.innerText = "Soal Uraian (Ketik Jawaban)";
+                badge.className = "inline-block text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md mb-3";
+                optsContainer.classList.add('hidden');
+                essayContainer.classList.remove('hidden');
+                document.getElementById('essay-input').value = '';
+            } else {
+                badge.innerText = "Pilihan Ganda";
+                badge.className = "inline-block text-xs font-semibold px-2.5 py-1 bg-violet-100 text-violet-700 rounded-md mb-3";
+                essayContainer.classList.add('hidden');
+                optsContainer.classList.remove('hidden');
+                optsContainer.innerHTML = '';
+
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full py-3.5 px-5 bg-white/90 hover:bg-indigo-50 border border-indigo-200 rounded-2xl text-left font-medium text-gray-700 transition shadow-sm hover:border-indigo-400 flex items-center justify-between group";
+                    btn.innerHTML = `<span>${opt}</span> <i class="fa-solid fa-chevron-right text-indigo-300 group-hover:text-indigo-600 transition"></i>`;
+                    btn.onclick = () => selectAnswer(idx, q.correct, opt);
+                    optsContainer.appendChild(btn);
+                });
+            }
         }
 
-        function selectAnswer(selected, correct) {
-            if (selected === correct || (currentQuestions === classicQuestions && currentIndex === 4)) {
-                score += 20; // 100 max for 5 questions
+        function selectAnswer(selected, correct, optText) {
+            const q = currentQuestions[currentIndex];
+            activeQuizAnswers.push({
+                question: q.question,
+                answer: optText
+            });
+
+            const pointsPerQ = Math.round(100 / currentQuestions.length);
+            if (selected === correct) {
+                score += pointsPerQ;
             }
+
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function submitEssayAnswer() {
+            const textVal = document.getElementById('essay-input').value.trim();
+            if (!textVal) {
+                showToast("Tulis jawabanmu terlebih dahulu ya!");
+                return;
+            }
+
+            const q = currentQuestions[currentIndex];
+            activeQuizAnswers.push({
+                question: q.question,
+                answer: textVal
+            });
+
+            // Essay answers automatically count as valid/correct for fun
+            const pointsPerQ = Math.round(100 / currentQuestions.length);
+            score += pointsPerQ;
 
             currentIndex++;
             if (currentIndex < currentQuestions.length) {
@@ -408,29 +566,69 @@
 
         function showResult() {
             switchView('result');
+            if (score > 100) score = 100;
             document.getElementById('score-display').innerText = score + '%';
             document.getElementById('result-name').innerText = username || 'Kamu';
 
             const msgEl = document.getElementById('result-message');
             const iconEl = document.getElementById('result-icon');
 
-            if (score === 100) {
+            if (score >= 80) {
                 iconEl.className = "fa-solid fa-fire";
-                msgEl.innerText = "Mantap banget! 100%! Kamu bener-bener merhatiin atau emang sepemikiran nih, " + username + "! 🚀🔥";
+                msgEl.innerText = "Mantap banget! Skor tinggimu menunjukkan kamu bener-bener merhatiin atau emang sepemikiran nih, " + username + "! 🚀🔥";
                 triggerConfetti();
-            } else if (score >= 60) {
+            } else if (score >= 40) {
                 iconEl.className = "fa-solid fa-face-laugh-wink";
-                msgEl.innerText = "Lumayan banget! Nilaimu tinggi. Berarti kalian udah cukup sering ngobrol dan seru-seruan bareng! 😎";
+                msgEl.innerText = "Lumayan banget! Berarti kalian udah cukup sering ngobrol dan nyambung satu sama lain! 😎";
                 triggerConfetti();
             } else {
                 iconEl.className = "fa-solid fa-face-grimacing";
-                msgEl.innerText = "Wah, ternyata masih banyak hal random tentang aku yang belum kamu tahu nih wkwk. Perlu sering nongkrong lagi kayaknya! 😉";
+                msgEl.innerText = "Wah, ternyata masih banyak hal random tentang aku yang belum kamu tahu nih wkwk. Perlu sering ngobrol lagi kayaknya! 😉";
             }
+
+            // If playing custom mode from a shared link, provide an option button to send results/answers back to the creator automatically!
+            if (isPlayingCustomMode) {
+                const feedbackPayload = {
+                    respondent: username || 'Teman',
+                    score: score,
+                    answers: activeQuizAnswers
+                };
+                const encodedFeedback = btoa(JSON.stringify(feedbackPayload));
+                const currentUrlWithoutParams = window.location.origin + window.location.pathname;
+                const feedbackLink = currentUrlWithoutParams + '?feedback=' + encodedFeedback;
+
+                const resultContainer = msgEl.parentNode;
+                // Check if feedback button already exists
+                if (!document.getElementById('btn-send-feedback')) {
+                    const feedbackDiv = document.createElement('div');
+                    feedbackDiv.className = "mt-4 pt-4 border-t border-indigo-100";
+                    feedbackDiv.innerHTML = `
+                        <p class="text-xs text-gray-500 mb-2">Mau kirim jawaban dan skor kamu ke pembuat soal ini supaya mereka tahu?</p>
+                        <button id="btn-send-feedback" onclick="copyFeedbackLink('${encodeURIComponent(feedbackLink)}')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow transition text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Salin Link Kirim Jawaban ke Pembuat Soal 🔗
+                        </button>
+                    `;
+                    resultContainer.insertBefore(feedbackDiv, resultContainer.lastElementChild);
+                }
+            }
+        }
+
+        function copyFeedbackLink(encodedLink) {
+            const decodedLink = decodeURIComponent(encodedLink);
+            const tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = decodedLink;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("Link laporan jawaban disalin! Kirimkan link ini ke temanmu yang bikin soal ya 🚀");
         }
 
         function restartQuiz() {
             currentIndex = 0;
             score = 0;
+            activeQuizAnswers = [];
             switchView('quiz');
             loadQuestion();
         }
@@ -443,24 +641,47 @@
             document.getElementById('modal-custom').classList.add('hidden');
         }
 
+        function toggleQuestionTypeInput() {
+            const type = document.getElementById('input-type').value;
+            const groupChoices = document.getElementById('group-choices');
+            const groupEssay = document.getElementById('group-essay');
+
+            if (type === 'essay') {
+                groupChoices.classList.add('hidden');
+                groupEssay.classList.remove('hidden');
+            } else {
+                groupChoices.classList.remove('hidden');
+                groupEssay.classList.add('hidden');
+            }
+        }
+
         function saveCustomQuestion(e) {
             e.preventDefault();
             const qText = document.getElementById('input-q').value;
-            const opt0 = document.getElementById('input-opt-0').value;
-            const opt1 = document.getElementById('input-opt-1').value;
-            const opt2 = document.getElementById('input-opt-2').value;
-            const opt3 = document.getElementById('input-opt-3').value;
-            const correct = parseInt(document.getElementById('input-correct').value);
+            const qType = document.getElementById('input-type').value;
 
-            customQuestions.push({
+            let newQ = {
                 question: qText,
-                options: [opt0, opt1, opt2, opt3],
-                correct: correct
-            });
+                type: qType
+            };
 
+            if (qType === 'essay') {
+                // No keyword needed
+            } else {
+                newQ.options = [
+                    document.getElementById('input-opt-0').value || 'Pilihan A',
+                    document.getElementById('input-opt-1').value || 'Pilihan B',
+                    document.getElementById('input-opt-2').value || 'Pilihan C',
+                    document.getElementById('input-opt-3').value || 'Pilihan D'
+                ];
+                newQ.correct = parseInt(document.getElementById('input-correct').value);
+            }
+
+            customQuestions.push(newQ);
             localStorage.setItem('kenalaku_custom', JSON.stringify(customQuestions));
             updateCustomUI();
             document.getElementById('form-add-question').reset();
+            toggleQuestionTypeInput();
             showToast("Pertanyaan berhasil ditambahkan! ✨");
         }
 
@@ -476,7 +697,11 @@
                 showToast("Buat minimal 1 soal dulu untuk dibagikan!");
                 return;
             }
-            const encoded = btoa(JSON.stringify(customQuestions));
+            const packageData = {
+                creator: username || 'Seseorang',
+                questions: customQuestions
+            };
+            const encoded = btoa(JSON.stringify(packageData));
             const link = window.location.origin + window.location.pathname + '?data=' + encoded;
             
             const tempInput = document.createElement('input');
@@ -486,7 +711,7 @@
             document.execCommand('copy');
             document.body.removeChild(tempInput);
 
-            showToast("Link kuis berhasil disalin! Kirim ke teman ya 🔗");
+            showToast("Link kuis berhasil disalin! Bagikan ke teman kamu 🔗");
         }
 
         function showToast(msg) {
