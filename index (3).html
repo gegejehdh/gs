@@ -1,0 +1,51 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KIR SMANCA | Kelompok Ilmiah Remaja SMA Negeri 1 Campalagian</title><meta name="description" content="Website resmi KIR SMANCA, Kelompok Ilmiah Remaja UPTD SMA Negeri 1 Campalagian."><link rel="icon" href="assets/logo.png"><link rel="stylesheet" href="assets/app.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"></head><body>
+<div class="fx"><i></i><i></i><i></i></div><header class="nav"><a class="brand" href="#beranda"><img id="lg" src="assets/logo.png" alt="Logo KIR SMANCA"><b>KIR SMANCA</b></a><button id="bg" aria-label="Menu">☰</button><nav id="mn"><a href="#beranda">Beranda</a><a href="#profil">Profil</a><a href="#kegiatan">Kegiatan</a><a href="#dokumentasi">Dokumentasi</a><a href="#daftar">Daftar</a><a href="#kontak">Kontak</a></nav></header>
+<main id="app"></main>
+<footer><b>KIR SMANCA</b><br>Kelompok Ilmiah Remaja · UPTD SMA Negeri 1 Campalagian<br><a href="https://www.instagram.com/kir.sman1campalagian" target="_blank" rel="noopener">@kir.sman1campalagian</a><br><small style="color:#fff9">© <span id="yr"></span> KIR SMANCA</small></footer>
+<div id="lb" class="lb"></div><div id="toast"></div>
+<script type="module">
+import * as F from "./assets/fb.js";
+const {db,esc}=F,$=s=>document.querySelector(s),app=$("#app"),IG="https://www.instagram.com/kir.sman1campalagian";
+let S={},G=[],post=null;$("#yr").textContent=new Date().getFullYear();
+const T=(v,d="")=>v?esc(v).replace(/\n/g,"<br>"):d,L=v=>v?`<ul class="l">${v.split("\n").filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:'<p class="mut">Belum diisi.</p>';
+const fmt=d=>d?new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"}):"";
+async function settings(){try{const d=await F.getDoc(F.doc(db,"settings","site"));S=d.exists()?d.data():{};if(S.logo)$("#lg").src=S.logo}catch(e){console.error(e);S={}}}
+async function acts(){const s=await F.getDocs(F.query(F.collection(db,"activities"),F.where("published","==",true)));return s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.date||"").localeCompare(a.date||""))}
+async function gals(){const s=await F.getDocs(F.query(F.collection(db,"gallery"),F.orderBy("createdAt","desc")));return G=s.docs.map(d=>({id:d.id,...d.data()}))}
+const card=a=>`<article class="card"><div class="im">${a.img?`<img loading="lazy" src="${a.img}" alt="${esc(a.title)}">`:""}</div><div class="bd"><small>${esc(a.category||"")} · ${fmt(a.date)} ${a.status?`<span class="tag">${esc(a.status)}</span>`:""}</small><h3>${esc(a.title)}</h3><p>${T(a.desc)}</p></div></article>`;
+const fig=g=>`<figure data-i="${g.id}"><img loading="lazy" src="${g.img}" alt="${esc(g.title)}"><figcaption><small>${esc(g.category||"")}</small><b>${esc(g.title)}</b><span>${esc(g.desc||"")}</span></figcaption></figure>`;
+const none='<p class="mut">Belum ada data.</p>';
+async function beranda(){const [A,Gl]=await Promise.all([acts(),gals()]);post=zoom;
+return `<section class="hero" style="--hi:url(${S.heroImg||"/assets/hero.jpg"})"><div class="sec"><img class="orb" src="${$("#lg").src}" alt=""><span class="chip">UPTD SMA Negeri 1 Campalagian</span><h1>${esc(S.heroTitle||"Mengasah Pikiran Kritis, Menumbuhkan Karya Ilmiah")}</h1><p>${T(S.tagline,"Wadah siswa SMA Negeri 1 Campalagian untuk berpikir kritis, berinovasi, dan mengembangkan keterampilan penelitian.")}</p><div class="cta"><a class="btn" href="#daftar">Daftar Anggota</a><a class="btn ghost" href="#kegiatan">Lihat Kegiatan</a><a class="btn ghost" href="#profil">Pelajari Organisasi</a></div></div></section>
+<section class="sec"><div class="stats"><div><b>${A.length}</b>Kegiatan</div><div><b>${Gl.length}</b>Dokumentasi</div></div><h2>Kegiatan Terbaru</h2><div class="grid">${A.slice(0,3).map(card).join("")||none}</div>
+<h2 style="margin-top:2.5rem">Dokumentasi Pilihan</h2><div class="grid">${Gl.slice(0,6).map(fig).join("")||none}</div>
+<div class="card pad" style="margin-top:2.5rem;text-align:center"><h2>Ikuti Kami di Instagram</h2><a class="btn" target="_blank" rel="noopener" href="${IG}">@kir.sman1campalagian</a></div></section>`}
+async function profil(){await settings();
+return `<section class="sec"><h2>Profil KIR SMANCA</h2><div class="card pad"><h3>Sejarah</h3><p>${T(S.history,'<span class="mut">Belum diisi.</span>')}</p></div><div class="two" style="margin-top:1.2rem"><div class="card pad"><h3>Visi</h3><p>${T(S.vision,'<span class="mut">Belum diisi.</span>')}</p></div><div class="card pad"><h3>Misi</h3>${L(S.mission)}</div></div>
+<div class="two" style="margin-top:1.2rem"><div class="card pad"><h3>Tujuan</h3>${L(S.goals)}</div><div class="card pad"><h3>Program Kerja</h3>${L(S.programs)}</div></div>
+<div class="card pad" style="margin-top:1.2rem"><h3>Struktur Kepengurusan</h3>${L(S.structure)}</div><div class="card pad" style="margin-top:1.2rem"><h3>Peran KIR</h3><p>${T(S.role,'<span class="mut">Belum diisi.</span>')}</p></div></section>`}
+async function kegiatan(){const A=await acts();
+return `<section class="sec"><h2>Kegiatan Terbaru</h2><div class="grid">${A.slice(0,6).map(card).join("")||none}</div>${A.length>6?`<h2 style="margin-top:2.5rem">Arsip Kegiatan</h2><div class="grid">${A.slice(6).map(card).join("")}</div>`:""}</section>`}
+async function dokumentasi(){const Gl=await gals();post=zoom;return `<section class="sec"><h2>Dokumentasi</h2><div class="grid">${Gl.map(fig).join("")||none}</div></section>`}
+function zoom(){const lb=$("#lb");app.querySelectorAll("figure").forEach(f=>f.onclick=()=>{const g=G.find(x=>x.id==f.dataset.i);lb.innerHTML=`<img src="${g.img}" alt=""><h3 style="color:#fff">${esc(g.title)}</h3><p>${T(g.desc)}</p>`;lb.classList.add("on")});lb.onclick=()=>lb.classList.remove("on")}
+async function daftar(){await settings();
+if(!S.regOpen)return `<section class="sec narrow"><h2>Pendaftaran Anggota</h2><div class="card pad"><b>Pendaftaran sedang ditutup.</b><p>Pantau Instagram resmi kami untuk informasi pembukaan berikutnya.</p></div></section>`;
+post=()=>{const f=$("#f");f.onsubmit=async e=>{e.preventDefault();const v=Object.fromEntries(new FormData(f)),m=$("#m"),b=f.querySelector("button");v.phone=v.phone.replace(/[\s-]/g,"");
+for(const k in v)v[k]=v[k].trim();
+if(Object.values(v).some(x=>!x)){m.className="err";m.textContent="Semua kolom wajib diisi.";return}
+if(!/^\d{8,15}$/.test(v.phone)){m.className="err";m.textContent="Nomor HP harus berupa 8–15 digit angka.";return}
+b.disabled=true;b.textContent="Mengirim…";m.textContent="";
+try{await settings();if(!S.regOpen){location.reload();return}
+await F.addDoc(F.collection(db,"members"),{name:v.name,kelas:v.kelas,phone:v.phone,reason:v.reason,createdAt:F.serverTimestamp()});
+f.reset();m.className="ok";m.textContent="Pendaftaran berhasil"}catch(x){console.error(x);m.className="err";m.textContent="Gagal mengirim. Periksa koneksi internet dan coba lagi."}
+b.disabled=false;b.textContent="Kirim Pendaftaran"}};
+return `<section class="sec narrow"><h2>Pendaftaran Anggota</h2><form id="f" class="card pad"><label>Nama lengkap<input name="name" required maxlength="100"></label><label>Kelas<select name="kelas" required><option value="">Pilih kelas</option>${F.KELAS.map(k=>`<option>${k}</option>`).join("")}</select></label><label>Nomor HP / WhatsApp<input name="phone" type="tel" inputmode="numeric" required placeholder="08xxxxxxxxxx"></label><label>Alasan bergabung<textarea name="reason" required maxlength="1000"></textarea></label><p id="m" role="status"></p><button class="btn">Kirim Pendaftaran</button></form></section>`}
+async function kontak(){await settings();post=()=>{const f=$("#sf");f.onsubmit=async e=>{e.preventDefault();const m=$("#sm"),b=f.querySelector("button"),v=Object.fromEntries(new FormData(f));if(v.message.trim().length<5){m.className="err";m.textContent="Pesan terlalu pendek.";return}b.disabled=true;b.textContent="Mengirim…";try{await F.addDoc(F.collection(db,"feedback"),{name:v.name.trim(),message:v.message.trim(),createdAt:F.serverTimestamp()});f.reset();m.className="ok";m.textContent="Terima kasih atas masukan Anda."}catch(x){console.error(x);m.className="err";m.textContent="Gagal mengirim. Coba lagi."}b.disabled=false;b.textContent="Kirim"}};
+return `<section class="sec"><h2>Kontak & Media Sosial</h2><div class="two"><div class="card pad"><h3>Hubungi Kami</h3><p>Instagram: <b>@kir.sman1campalagian</b></p>${S.email?`<p>Email: ${esc(S.email)}</p>`:""}${S.phone?`<p>Telepon/WA: ${esc(S.phone)}</p>`:""}<p>UPTD SMA Negeri 1 Campalagian</p><br><a class="btn" target="_blank" rel="noopener" href="${IG}">Kunjungi Instagram</a></div><form id="sf" class="card pad"><h3>Kritik & Saran</h3><label>Nama (opsional)<input name="name" maxlength="100"></label><label>Pesan<textarea name="message" required maxlength="1000"></textarea></label><p id="sm" role="status"></p><button class="btn">Kirim</button></form></div></section>`}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.1});
+function reveal(){document.querySelectorAll(".card,figure,.stats div,h2").forEach(e=>{e.classList.add("rv");io.observe(e)})}
+const routes={beranda,profil,kegiatan,dokumentasi,daftar,kontak};
+async function route(){const r=location.hash.slice(1)in routes?location.hash.slice(1):"beranda";document.querySelectorAll("#mn a").forEach(a=>a.classList.toggle("on",a.hash=="#"+r));$("#mn").classList.remove("open");post=null;app.innerHTML='<div class="sec mut">Memuat…</div>';scrollTo(0,0);
+try{if(r!="profil"&&r!="daftar"&&r!="kontak")await settings();app.innerHTML=await routes[r]();post&&post()}catch(e){console.error(e);app.innerHTML='<div class="sec err">'+(F.configured?"Gagal memuat data. Periksa koneksi internet, dan pastikan aturan Firestore sudah dipublikasikan.":"Konfigurasi Firebase belum diisi di assets/fb.js.")+"</div>"}app.className="fade";reveal()}
+$("#bg").onclick=()=>$("#mn").classList.toggle("open");addEventListener("hashchange",route);route();
+</script></body></html>
