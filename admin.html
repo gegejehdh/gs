@@ -1,42 +1,1024 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Admin KIR SMANCA</title><link rel="icon" href="assets/logo.png"><link rel="stylesheet" href="assets/app.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"></head><body><div id="root"></div><div id="toast" class="toast"></div>
-<script type="module">
-import * as F from "./assets/fb.js";
-const {db,auth,esc}=F,$=s=>document.querySelector(s),root=$("#root");let note="";
-const toast=(m,e)=>{const t=$("#toast");t.textContent=m;t.className="toast show"+(e?" err":"");setTimeout(()=>t.className="toast",3000)};
-function login(msg=""){root.innerHTML=`<div class="card login"><img src="assets/logo.png" width="80" style="margin:auto"><h2>Login Admin</h2><p class="err">${msg}</p><form id="lf"><input type="email" name="e" placeholder="Email" required><input type="password" name="p" placeholder="Kata sandi" required><button class="btn">Masuk</button></form></div>`;
-$("#lf").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;b.textContent="Memproses…";try{await F.signInWithEmailAndPassword(auth,e.target.e.value,e.target.p.value)}catch(x){login(["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-email"].includes(x.code)?"Email atau kata sandi salah.":"Gagal masuk ("+(x.code||x.message)+"). "+(F.configured?"":"Konfigurasi Firebase belum diisi di assets/fb.js."))}}}
-F.onAuthStateChanged(auth,async u=>{if(!u){login(note);note="";return}
-try{const a=await F.getDoc(F.doc(db,"admins",u.uid));if(!a.exists()){note="Akun ini bukan admin.";return F.signOut(auth)}}catch{note="Gagal memeriksa izin admin.";return F.signOut(auth)}shell()});
-const inp=(k,t,v,d)=>t=="area"?`<textarea name="${k}">${esc(v)}</textarea>`:t=="img"?`<input type="file" name="${k}" accept="image/*">${v?`<img src="${v}" width="120">`:""}`:t=="chk"?`<input type="checkbox" name="${k}" style="width:auto" ${(v??d)?"checked":""}>`:t.startsWith("select")?`<select name="${k}">${t.slice(7).split(",").map(o=>`<option ${o==v?"selected":""}>${o}</option>`).join("")}</select>`:`<input type="${t}" name="${k}" value="${esc(v)}">`;
-const fields=(FL,e,d)=>FL.map(([k,l,t])=>`<label>${l}${inp(k,t,e[k],d)}</label>`).join("");
-async function collect(f,FL,e){const d={};for(const[k,,t]of FL){const el=f.elements[k];if(t=="img"){if(el.files[0])d[k]=await F.compress(el.files[0],k=="logo"?500:k=="heroImg"?1400:900,.72,k=="logo"?"image/png":"image/jpeg");else if(e[k])d[k]=e[k]}else if(t=="chk")d[k]=el.checked;else d[k]=el.value.trim()}return d}
-const AF=[["title","Nama kegiatan","text"],["date","Tanggal pelaksanaan","date"],["category","Kategori","text"],["status","Status","select:Akan datang,Berlangsung,Selesai"],["desc","Deskripsi","area"],["img","Gambar / poster","img"],["published","Terbitkan ke publik","chk"]];
-const GF=[["title","Judul","text"],["category","Kategori","text"],["desc","Keterangan","area"],["img","Foto","img"]];
-const SF=[["name","Nama organisasi","text"],["tagline","Deskripsi singkat (beranda)","area"],["heroTitle","Judul hero beranda","text"],["history","Sejarah","area"],["vision","Visi","area"],["mission","Misi (satu per baris)","area"],["goals","Tujuan (satu per baris)","area"],["structure","Struktur kepengurusan (satu per baris, mis. Ketua: Nama)","area"],["programs","Program kerja (satu per baris)","area"],["role","Peran KIR","area"],["email","Email kontak (opsional)","text"],["phone","Telepon/WA kontak (opsional)","text"],["logo","Logo (opsional)","img"],["heroImg","Gambar utama beranda (opsional)","img"],["regOpen","Pendaftaran anggota DIBUKA","chk"]];
-const TABS={dash:["Dashboard",dash],reg:["Pendaftar",reg],act:["Kegiatan",c=>crud("activities",AF,c)],gal:["Dokumentasi",c=>crud("gallery",GF,c)],set:["Profil & Situs",setts],fb:["Kritik & Saran",fbk]};
-function shell(){root.innerHTML=`<div class="adm"><aside><b style="padding:.5rem">Admin KIR</b>${Object.entries(TABS).map(([k,[n]])=>`<a data-t="${k}">${n}</a>`).join("")}<a id="out">Keluar</a></aside><section id="ct"></section></div>`;
-document.querySelectorAll("[data-t]").forEach(a=>a.onclick=()=>go(a.dataset.t));$("#out").onclick=()=>F.signOut(auth);go("dash")}
-async function go(k){document.querySelectorAll("[data-t]").forEach(a=>a.classList.toggle("on",a.dataset.t==k));const c=$("#ct");c.innerHTML="Memuat…";try{await TABS[k][1](c)}catch(e){console.error(e);c.innerHTML='<p class="err">Gagal memuat data. Periksa koneksi dan aturan Firestore.</p>'}}
-const cnt=async c=>(await F.getCountFromServer(F.collection(db,c))).data().count;
-async function dash(c){const [m,a,g,f,s]=await Promise.all([cnt("members"),cnt("activities"),cnt("gallery"),cnt("feedback"),F.getDoc(F.doc(db,"settings","site"))]);const o=s.exists()&&s.data().regOpen;
-c.innerHTML=`<h2>Dashboard</h2><div class="stats"><div><b>${m}</b>Pendaftar</div><div><b>${a}</b>Kegiatan</div><div><b>${g}</b>Dokumentasi</div><div><b>${f}</b>Kritik & saran</div><div><b class="${o?"ok":"err"}" style="font-size:1.3rem">${o?"DIBUKA":"DITUTUP"}</b>Pendaftaran</div></div>`}
-async function reg(c){const s=await F.getDocs(F.query(F.collection(db,"members"),F.orderBy("createdAt","desc")));let R=s.docs.map(d=>({id:d.id,...d.data(),t:d.data().createdAt?.toDate?.()}));
-c.innerHTML=`<h2>Pendaftar</h2><div class="bar"><input id="q" placeholder="Cari nama"><select id="k"><option value="">Semua kelas</option>${F.KELAS.map(k=>`<option>${k}</option>`).join("")}</select><select id="o"><option value="d">Terbaru</option><option value="n">Nama A–Z</option><option value="k">Kelas</option></select><button class="btn" id="csv">Unduh CSV</button></div><p id="n"></p><div class="tw" id="tb"></div>`;
-let V=[];const draw=()=>{const q=$("#q").value.toLowerCase(),k=$("#k").value,o=$("#o").value;V=R.filter(r=>r.name.toLowerCase().includes(q)&&(!k||r.kelas==k));if(o=="n")V.sort((a,b)=>a.name.localeCompare(b.name));if(o=="k")V.sort((a,b)=>F.KELAS.indexOf(a.kelas)-F.KELAS.indexOf(b.kelas));$("#n").textContent=V.length+" pendaftar";
-$("#tb").innerHTML=`<table><tr><th>Nama</th><th>Kelas</th><th>HP</th><th>Tanggal</th><th></th></tr>${V.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.kelas)}</td><td>${esc(r.phone)}</td><td>${r.t?r.t.toLocaleDateString("id-ID"):""}</td><td><button class="btn sm" data-v="${r.id}">Detail</button> <button class="btn sm red" data-d="${r.id}">Hapus</button></td></tr><tr id="d${r.id}" hidden><td colspan="5"><b>Alasan:</b> ${esc(r.reason)}</td></tr>`).join("")}</table>`;
-document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{const e=$("#d"+b.dataset.v);e.hidden=!e.hidden});
-document.querySelectorAll("[data-d]").forEach(b=>b.onclick=async()=>{if(!confirm("Hapus pendaftar ini?"))return;try{await F.deleteDoc(F.doc(db,"members",b.dataset.d));R=R.filter(r=>r.id!=b.dataset.d);draw();toast("Dihapus")}catch{toast("Gagal menghapus",1)}})};
-["q","k","o"].forEach(i=>$("#"+i).oninput=draw);draw();
-$("#csv").onclick=()=>{const q=x=>`"${String(x??"").replace(/"/g,'""')}"`,rows=[["Nama","Kelas","HP","Alasan","Tanggal"],...V.map(r=>[r.name,r.kelas,r.phone,r.reason,r.t?r.t.toISOString():""])];const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+rows.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}));a.download="pendaftar-kir.csv";a.click()}}
-async function crud(col,FL,c){const load=async()=>(await F.getDocs(F.query(F.collection(db,col),F.orderBy("createdAt","desc")))).docs.map(d=>({id:d.id,...d.data()}));let items=await load();
-const draw=(e={})=>{c.innerHTML=`<h2>${e.id?"Edit":"Tambah"}</h2><form id="f" class="card pad">${fields(FL,e,true)}<div><button class="btn">Simpan</button> ${e.id?'<button type="button" class="btn ghost" id="cx" style="color:#333">Batal</button>':""}</div></form><h2 style="margin-top:1.5rem">Daftar (${items.length})</h2><div class="gl">${items.map(i=>`<div class="card">${i.img?`<img src="${i.img}">`:""}<b>${esc(i.title)}</b><small>${esc(i.category||"")} ${i.published===false?"· draf":""}</small><div><button class="btn sm" data-e="${i.id}">Edit</button> <button class="btn sm red" data-d="${i.id}">Hapus</button></div></div>`).join("")}</div>`;
-if($("#cx"))$("#cx").onclick=()=>draw();
-$("#f").onsubmit=async ev=>{ev.preventDefault();const b=ev.target.querySelector(".btn");b.disabled=true;try{const d=await collect(ev.target,FL,e);if(!d.title)throw Error("Judul wajib diisi");if(col=="gallery"&&!d.img)throw Error("Foto wajib diunggah");
-if(e.id)await F.updateDoc(F.doc(db,col,e.id),d);else await F.addDoc(F.collection(db,col),{...d,createdAt:F.serverTimestamp()});toast("Tersimpan");items=await load();draw()}catch(x){toast(x.message||"Gagal menyimpan",1);b.disabled=false}};
-c.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{draw(items.find(i=>i.id==b.dataset.e));scrollTo(0,0)});
-c.querySelectorAll("[data-d]").forEach(b=>b.onclick=async()=>{if(!confirm("Hapus item ini?"))return;try{await F.deleteDoc(F.doc(db,col,b.dataset.d));items=await load();draw();toast("Dihapus")}catch{toast("Gagal menghapus",1)}})};draw()}
-async function setts(c){const s=await F.getDoc(F.doc(db,"settings","site")),e=s.exists()?s.data():{};c.innerHTML=`<h2>Profil & Pengaturan Situs</h2><form id="f" class="card pad">${fields(SF,e,false)}<button class="btn">Simpan</button></form>`;
-$("#f").onsubmit=async ev=>{ev.preventDefault();const b=ev.target.querySelector("button");b.disabled=true;try{await F.setDoc(F.doc(db,"settings","site"),await collect(ev.target,SF,e));toast("Tersimpan")}catch(x){toast("Gagal menyimpan",1)}b.disabled=false}}
-async function fbk(c){const s=await F.getDocs(F.query(F.collection(db,"feedback"),F.orderBy("createdAt","desc")));c.innerHTML=`<h2>Kritik & Saran (${s.size})</h2>`+(s.docs.map(d=>{const x=d.data();return`<div class="card pad" style="margin-bottom:.8rem"><b>${esc(x.name||"Anonim")}</b> <small>${x.createdAt?.toDate?.().toLocaleString("id-ID")||""}</small><p>${esc(x.message)}</p><button class="btn sm red" data-d="${d.id}">Hapus</button></div>`}).join("")||"<p>Belum ada masukan.</p>");
-c.querySelectorAll("[data-d]").forEach(b=>b.onclick=async()=>{if(confirm("Hapus?")){await F.deleteDoc(F.doc(db,"feedback",b.dataset.d));fbk(c)}})}
-</script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+
+    <title>Admin KIR SMANCA</title>
+
+    <link rel="icon" href="assets/logo.png">
+    <link rel="stylesheet" href="assets/app.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet"
+    >
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    ></div>
+
+    <script type="module">
+        import * as F from "./assets/fb.js";
+
+        const { db, auth, esc } = F;
+        const $ = (selector) => document.querySelector(selector);
+        const root = $("#root");
+
+        let note = "";
+
+        // ========================================
+        // NOTIFIKASI
+        // ========================================
+
+        const toast = (message, isError = false) => {
+            const element = $("#toast");
+
+            element.textContent = message;
+            element.className =
+                "toast show" + (isError ? " err" : "");
+
+            setTimeout(() => {
+                element.className = "toast";
+            }, 3000);
+        };
+
+        // ========================================
+        // LOGIN ADMIN
+        // ========================================
+
+        function login(message = "") {
+            root.innerHTML = `
+                <div class="card login">
+                    <img
+                        src="assets/logo.png"
+                        width="80"
+                        alt="Logo KIR SMANCA"
+                        style="margin:auto"
+                    >
+
+                    <h2>Login Admin</h2>
+
+                    <p class="err">${esc(message)}</p>
+
+                    <form id="lf">
+                        <input
+                            type="email"
+                            name="e"
+                            placeholder="Email"
+                            autocomplete="username"
+                            required
+                        >
+
+                        <input
+                            type="password"
+                            name="p"
+                            placeholder="Kata sandi"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button class="btn" type="submit">
+                            Masuk
+                        </button>
+                    </form>
+                </div>
+            `;
+
+            $("#lf").onsubmit = async (event) => {
+                event.preventDefault();
+
+                const form = event.currentTarget;
+                const button = form.querySelector("button");
+
+                button.disabled = true;
+                button.textContent = "Memproses…";
+
+                try {
+                    await F.signInWithEmailAndPassword(
+                        auth,
+                        form.elements.e.value,
+                        form.elements.p.value
+                    );
+                } catch (error) {
+                    const invalidCodes = [
+                        "auth/invalid-credential",
+                        "auth/wrong-password",
+                        "auth/user-not-found",
+                        "auth/invalid-email"
+                    ];
+
+                    const message = invalidCodes.includes(error.code)
+                        ? "Email atau kata sandi salah."
+                        : `Gagal masuk (${error.code || error.message}). ${
+                            F.configured
+                                ? ""
+                                : "Konfigurasi Firebase belum diisi di assets/fb.js."
+                        }`;
+
+                    login(message);
+                }
+            };
+        }
+
+        // ========================================
+        // VERIFIKASI AKUN ADMIN
+        // ========================================
+
+        F.onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                login(note);
+                note = "";
+                return;
+            }
+
+            try {
+                const adminDoc = await F.getDoc(
+                    F.doc(db, "admins", user.uid)
+                );
+
+                if (!adminDoc.exists()) {
+                    note = "Akun ini bukan admin.";
+                    await F.signOut(auth);
+                    return;
+                }
+            } catch (error) {
+                console.error(error);
+
+                note = "Gagal memeriksa izin admin.";
+                await F.signOut(auth);
+                return;
+            }
+
+            shell();
+        });
+
+        // ========================================
+        // INPUT FORM DINAMIS
+        // ========================================
+
+        const inp = (key, type, value, defaultValue) => {
+            if (type === "area") {
+                return `
+                    <textarea name="${key}">${esc(value)}</textarea>
+                `;
+            }
+
+            if (type === "img") {
+                return `
+                    <input
+                        type="file"
+                        name="${key}"
+                        accept="image/*"
+                    >
+
+                    ${
+                        value
+                            ? `<img src="${esc(value)}" width="120" alt="Pratinjau gambar">`
+                            : ""
+                    }
+                `;
+            }
+
+            if (type === "chk") {
+                return `
+                    <input
+                        type="checkbox"
+                        name="${key}"
+                        style="width:auto"
+                        ${(value ?? defaultValue) ? "checked" : ""}
+                    >
+                `;
+            }
+
+            if (type.startsWith("select")) {
+                return `
+                    <select name="${key}">
+                        ${type.slice(7).split(",").map(option => `
+                            <option
+                                ${option === value ? "selected" : ""}
+                            >${option}</option>
+                        `).join("")}
+                    </select>
+                `;
+            }
+
+            return `
+                <input
+                    type="${type}"
+                    name="${key}"
+                    value="${esc(value)}"
+                >
+            `;
+        };
+
+        const fields = (fieldList, data, defaultValue) => {
+            return fieldList.map(([key, label, type]) => `
+                <label>
+                    ${label}
+                    ${inp(key, type, data[key], defaultValue)}
+                </label>
+            `).join("");
+        };
+
+        // ========================================
+        // MENGUMPULKAN DATA FORM
+        // ========================================
+
+        async function collect(form, fieldList, existingData = {}) {
+            const data = {};
+
+            for (const [key, , type] of fieldList) {
+                const element = form.elements[key];
+
+                if (type === "img") {
+                    if (element.files[0]) {
+                        data[key] = await F.compress(
+                            element.files[0],
+                            key === "logo"
+                                ? 500
+                                : key === "heroImg"
+                                    ? 1400
+                                    : 900,
+                            0.72,
+                            key === "logo"
+                                ? "image/png"
+                                : "image/jpeg"
+                        );
+                    } else if (existingData[key]) {
+                        data[key] = existingData[key];
+                    }
+
+                    continue;
+                }
+
+                if (type === "chk") {
+                    data[key] = element.checked;
+                    continue;
+                }
+
+                data[key] = element.value.trim();
+            }
+
+            return data;
+        }
+
+        // ========================================
+        // KONFIGURASI FORM
+        // ========================================
+
+        const AF = [
+            ["title", "Nama kegiatan", "text"],
+            ["date", "Tanggal pelaksanaan", "date"],
+            ["category", "Kategori", "text"],
+            [
+                "status",
+                "Status",
+                "select:Akan datang,Berlangsung,Selesai"
+            ],
+            ["desc", "Deskripsi", "area"],
+            ["img", "Gambar / poster", "img"],
+            ["published", "Terbitkan ke publik", "chk"]
+        ];
+
+        const GF = [
+            ["title", "Judul", "text"],
+            ["category", "Kategori", "text"],
+            ["desc", "Keterangan", "area"],
+            ["img", "Foto", "img"]
+        ];
+
+        const SF = [
+            ["name", "Nama organisasi", "text"],
+            ["tagline", "Deskripsi singkat (beranda)", "area"],
+            ["heroTitle", "Judul hero beranda", "text"],
+            ["history", "Sejarah", "area"],
+            ["vision", "Visi", "area"],
+            ["mission", "Misi (satu per baris)", "area"],
+            ["goals", "Tujuan (satu per baris)", "area"],
+            [
+                "structure",
+                "Struktur kepengurusan (satu per baris, mis. Ketua: Nama)",
+                "area"
+            ],
+            ["programs", "Program kerja (satu per baris)", "area"],
+            ["role", "Peran KIR", "area"],
+            ["email", "Email kontak (opsional)", "text"],
+            ["phone", "Telepon/WA kontak (opsional)", "text"],
+            ["logo", "Logo (opsional)", "img"],
+            ["heroImg", "Gambar utama beranda (opsional)", "img"],
+            ["regOpen", "Pendaftaran anggota DIBUKA", "chk"]
+        ];
+
+        // ========================================
+        // MENU ADMIN
+        // ========================================
+
+        const TABS = {
+            dash: ["Dashboard", dash],
+            reg: ["Pendaftar", reg],
+            act: ["Kegiatan", (container) =>
+                crud("activities", AF, container)
+            ],
+            gal: ["Dokumentasi", (container) =>
+                crud("gallery", GF, container)
+            ],
+            set: ["Profil & Situs", setts],
+            fb: ["Kritik & Saran", fbk]
+        };
+
+        function shell() {
+            root.innerHTML = `
+                <div class="adm">
+                    <aside>
+                        <b style="padding:.5rem">
+                            Admin KIR
+                        </b>
+
+                        ${Object.entries(TABS).map(([key, [label]]) => `
+                            <a
+                                href="#${key}"
+                                data-t="${key}"
+                            >${label}</a>
+                        `).join("")}
+
+                        <a href="#" id="out">Keluar</a>
+                    </aside>
+
+                    <section id="ct"></section>
+                </div>
+            `;
+
+            document.querySelectorAll("[data-t]").forEach(link => {
+                link.onclick = (event) => {
+                    event.preventDefault();
+                    go(link.dataset.t);
+                };
+            });
+
+            $("#out").onclick = async (event) => {
+                event.preventDefault();
+                await F.signOut(auth);
+            };
+
+            go("dash");
+        }
+
+        async function go(key) {
+            document.querySelectorAll("[data-t]").forEach(link => {
+                link.classList.toggle(
+                    "on",
+                    link.dataset.t === key
+                );
+            });
+
+            const container = $("#ct");
+            container.innerHTML = "Memuat…";
+
+            try {
+                await TABS[key][1](container);
+            } catch (error) {
+                console.error(error);
+
+                container.innerHTML = `
+                    <p class="err">
+                        Gagal memuat data. Periksa koneksi
+                        dan aturan Firestore.
+                    </p>
+                `;
+            }
+        }
+
+        // ========================================
+        // DASHBOARD
+        // ========================================
+
+        const cnt = async (collectionName) => {
+            const snapshot = await F.getCountFromServer(
+                F.collection(db, collectionName)
+            );
+
+            return snapshot.data().count;
+        };
+
+        async function dash(container) {
+            const [members, activities, gallery, feedback, settings] =
+                await Promise.all([
+                    cnt("members"),
+                    cnt("activities"),
+                    cnt("gallery"),
+                    cnt("feedback"),
+                    F.getDoc(F.doc(db, "settings", "site"))
+                ]);
+
+            const registrationOpen =
+                settings.exists() && settings.data().regOpen;
+
+            container.innerHTML = `
+                <h2>Dashboard</h2>
+
+                <div class="stats">
+                    <div>
+                        <b>${members}</b>
+                        Pendaftar
+                    </div>
+
+                    <div>
+                        <b>${activities}</b>
+                        Kegiatan
+                    </div>
+
+                    <div>
+                        <b>${gallery}</b>
+                        Dokumentasi
+                    </div>
+
+                    <div>
+                        <b>${feedback}</b>
+                        Kritik & saran
+                    </div>
+
+                    <div>
+                        <b
+                            class="${registrationOpen ? "ok" : "err"}"
+                            style="font-size:1.3rem"
+                        >
+                            ${registrationOpen ? "DIBUKA" : "DITUTUP"}
+                        </b>
+                        Pendaftaran
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========================================
+        // PENDAFTAR
+        // ========================================
+
+        async function reg(container) {
+            const snapshot = await F.getDocs(
+                F.query(
+                    F.collection(db, "members"),
+                    F.orderBy("createdAt", "desc")
+                )
+            );
+
+            let records = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                t: doc.data().createdAt?.toDate?.()
+            }));
+
+            container.innerHTML = `
+                <h2>Pendaftar</h2>
+
+                <div class="bar">
+                    <input
+                        id="q"
+                        type="search"
+                        placeholder="Cari nama"
+                    >
+
+                    <select id="k">
+                        <option value="">Semua kelas</option>
+
+                        ${F.KELAS.map(kelas => `
+                            <option>${esc(kelas)}</option>
+                        `).join("")}
+                    </select>
+
+                    <select id="o">
+                        <option value="d">Terbaru</option>
+                        <option value="n">Nama A–Z</option>
+                        <option value="k">Kelas</option>
+                    </select>
+
+                    <button class="btn" id="csv" type="button">
+                        Unduh CSV
+                    </button>
+                </div>
+
+                <p id="n"></p>
+
+                <div class="tw" id="tb"></div>
+            `;
+
+            let visibleRecords = [];
+
+            const draw = () => {
+                const query = $("#q").value.toLowerCase();
+                const selectedClass = $("#k").value;
+                const order = $("#o").value;
+
+                visibleRecords = records.filter(record =>
+                    String(record.name || "")
+                        .toLowerCase()
+                        .includes(query)
+                    &&
+                    (!selectedClass || record.kelas === selectedClass)
+                );
+
+                if (order === "n") {
+                    visibleRecords.sort((a, b) =>
+                        String(a.name || "").localeCompare(
+                            String(b.name || "")
+                        )
+                    );
+                }
+
+                if (order === "k") {
+                    visibleRecords.sort((a, b) =>
+                        F.KELAS.indexOf(a.kelas)
+                        - F.KELAS.indexOf(b.kelas)
+                    );
+                }
+
+                $("#n").textContent =
+                    `${visibleRecords.length} pendaftar`;
+
+                $("#tb").innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>HP</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            ${visibleRecords.map(record => `
+                                <tr>
+                                    <td>${esc(record.name)}</td>
+                                    <td>${esc(record.kelas)}</td>
+                                    <td>${esc(record.phone)}</td>
+                                    <td>
+                                        ${
+                                            record.t
+                                                ? record.t.toLocaleDateString("id-ID")
+                                                : ""
+                                        }
+                                    </td>
+                                    <td>
+                                        <button
+                                            class="btn sm"
+                                            data-v="${record.id}"
+                                            type="button"
+                                        >
+                                            Detail
+                                        </button>
+
+                                        <button
+                                            class="btn sm red"
+                                            data-d="${record.id}"
+                                            type="button"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr id="d${record.id}" hidden>
+                                    <td colspan="5">
+                                        <b>Alasan:</b>
+                                        ${esc(record.reason)}
+                                    </td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                `;
+
+                container.querySelectorAll("[data-v]").forEach(button => {
+                    button.onclick = () => {
+                        const detail = $(
+                            "#d" + button.dataset.v
+                        );
+
+                        detail.hidden = !detail.hidden;
+                    };
+                });
+
+                container.querySelectorAll("[data-d]").forEach(button => {
+                    button.onclick = async () => {
+                        if (!confirm("Hapus pendaftar ini?")) {
+                            return;
+                        }
+
+                        try {
+                            await F.deleteDoc(
+                                F.doc(
+                                    db,
+                                    "members",
+                                    button.dataset.d
+                                )
+                            );
+
+                            records = records.filter(
+                                record => record.id !== button.dataset.d
+                            );
+
+                            draw();
+                            toast("Pendaftar berhasil dihapus.");
+                        } catch (error) {
+                            console.error(error);
+                            toast("Gagal menghapus pendaftar.", true);
+                        }
+                    };
+                });
+            };
+
+            ["q", "k", "o"].forEach(id => {
+                $("#" + id).oninput = draw;
+            });
+
+            draw();
+
+            $("#csv").onclick = () => {
+                const quote = value =>
+                    `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+                const rows = [
+                    ["Nama", "Kelas", "HP", "Alasan", "Tanggal"],
+                    ...visibleRecords.map(record => [
+                        record.name,
+                        record.kelas,
+                        record.phone,
+                        record.reason,
+                        record.t ? record.t.toISOString() : ""
+                    ])
+                ];
+
+                const blob = new Blob(
+                    [
+                        "\ufeff" +
+                        rows.map(row =>
+                            row.map(quote).join(",")
+                        ).join("\n")
+                    ],
+                    { type: "text/csv;charset=utf-8;" }
+                );
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+
+                link.href = url;
+                link.download = "pendaftar-kir.csv";
+                link.click();
+
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        // ========================================
+        // KEGIATAN DAN DOKUMENTASI
+        // ========================================
+
+        async function crud(collectionName, fieldList, container) {
+            const load = async () => {
+                const snapshot = await F.getDocs(
+                    F.query(
+                        F.collection(db, collectionName),
+                        F.orderBy("createdAt", "desc")
+                    )
+                );
+
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            };
+
+            let items = await load();
+
+            const draw = (existing = {}) => {
+                container.innerHTML = `
+                    <h2>${existing.id ? "Edit Data" : "Tambah Data"}</h2>
+
+                    <form id="f" class="card pad">
+                        ${fields(fieldList, existing, true)}
+
+                        <div>
+                            <button class="btn" type="submit">
+                                Simpan
+                            </button>
+
+                            ${
+                                existing.id
+                                    ? `
+                                        <button
+                                            type="button"
+                                            class="btn ghost"
+                                            id="cx"
+                                            style="color:#333"
+                                        >
+                                            Batal
+                                        </button>
+                                    `
+                                    : ""
+                            }
+                        </div>
+                    </form>
+
+                    <h2 style="margin-top:1.5rem">
+                        Daftar (${items.length})
+                    </h2>
+
+                    <div class="gl">
+                        ${items.map(item => `
+                            <div class="card">
+                                ${
+                                    item.img
+                                        ? `
+                                            <img
+                                                src="${esc(item.img)}"
+                                                alt="${esc(item.title)}"
+                                            >
+                                        `
+                                        : ""
+                                }
+
+                                <b>${esc(item.title)}</b>
+
+                                <small>
+                                    ${esc(item.category || "")}
+                                    ${
+                                        item.published === false
+                                            ? " · draf"
+                                            : ""
+                                    }
+                                </small>
+
+                                <div>
+                                    <button
+                                        class="btn sm"
+                                        data-e="${item.id}"
+                                        type="button"
+                                    >
+                                        Edit
+                                    </button>
+
+                                    <button
+                                        class="btn sm red"
+                                        data-d="${item.id}"
+                                        type="button"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+
+                const cancelButton = $("#cx");
+
+                if (cancelButton) {
+                    cancelButton.onclick = () => draw();
+                }
+
+                $("#f").onsubmit = async event => {
+                    event.preventDefault();
+
+                    const form = event.currentTarget;
+                    const button = form.querySelector('button[type="submit"]');
+
+                    button.disabled = true;
+
+                    try {
+                        const data = await collect(
+                            form,
+                            fieldList,
+                            existing
+                        );
+
+                        if (!data.title) {
+                            throw new Error("Judul wajib diisi.");
+                        }
+
+                        if (
+                            collectionName === "gallery"
+                            && !data.img
+                        ) {
+                            throw new Error("Foto wajib diunggah.");
+                        }
+
+                        if (existing.id) {
+                            await F.updateDoc(
+                                F.doc(db, collectionName, existing.id),
+                                data
+                            );
+                        } else {
+                            await F.addDoc(
+                                F.collection(db, collectionName),
+                                {
+                                    ...data,
+                                    createdAt: F.serverTimestamp()
+                                }
+                            );
+                        }
+
+                        toast("Data berhasil disimpan.");
+
+                        items = await load();
+                        draw();
+                    } catch (error) {
+                        console.error(error);
+
+                        toast(
+                            error.message || "Gagal menyimpan data.",
+                            true
+                        );
+
+                        button.disabled = false;
+                    }
+                };
+
+                container.querySelectorAll("[data-e]").forEach(button => {
+                    button.onclick = () => {
+                        const item = items.find(
+                            entry => entry.id === button.dataset.e
+                        );
+
+                        if (item) {
+                            draw(item);
+                            scrollTo(0, 0);
+                        }
+                    };
+                });
+
+                container.querySelectorAll("[data-d]").forEach(button => {
+                    button.onclick = async () => {
+                        if (!confirm("Hapus item ini?")) {
+                            return;
+                        }
+
+                        try {
+                            await F.deleteDoc(
+                                F.doc(
+                                    db,
+                                    collectionName,
+                                    button.dataset.d
+                                )
+                            );
+
+                            items = await load();
+                            draw();
+
+                            toast("Data berhasil dihapus.");
+                        } catch (error) {
+                            console.error(error);
+                            toast("Gagal menghapus data.", true);
+                        }
+                    };
+                });
+            };
+
+            draw();
+        }
+
+        // ========================================
+        // PENGATURAN PROFIL DAN SITUS
+        // ========================================
+
+        async function setts(container) {
+            const snapshot = await F.getDoc(
+                F.doc(db, "settings", "site")
+            );
+
+            const existing = snapshot.exists()
+                ? snapshot.data()
+                : {};
+
+            container.innerHTML = `
+                <h2>Profil & Pengaturan Situs</h2>
+
+                <form id="f" class="card pad">
+                    ${fields(SF, existing, false)}
+
+                    <button class="btn" type="submit">
+                        Simpan
+                    </button>
+                </form>
+            `;
+
+            $("#f").onsubmit = async event => {
+                event.preventDefault();
+
+                const form = event.currentTarget;
+                const button = form.querySelector("button");
+
+                button.disabled = true;
+
+                try {
+                    const data = await collect(
+                        form,
+                        SF,
+                        existing
+                    );
+
+                    await F.setDoc(
+                        F.doc(db, "settings", "site"),
+                        data
+                    );
+
+                    toast("Pengaturan berhasil disimpan.");
+                } catch (error) {
+                    console.error(error);
+                    toast("Gagal menyimpan pengaturan.", true);
+                } finally {
+                    button.disabled = false;
+                }
+            };
+        }
+
+        // ========================================
+        // KRITIK DAN SARAN
+        // ========================================
+
+        async function fbk(container) {
+            const snapshot = await F.getDocs(
+                F.query(
+                    F.collection(db, "feedback"),
+                    F.orderBy("createdAt", "desc")
+                )
+            );
+
+            container.innerHTML = `
+                <h2>Kritik & Saran (${snapshot.size})</h2>
+
+                ${
+                    snapshot.docs.map(doc => {
+                        const data = doc.data();
+
+                        return `
+                            <div
+                                class="card pad"
+                                style="margin-bottom:.8rem"
+                            >
+                                <b>
+                                    ${esc(data.name || "Anonim")}
+                                </b>
+
+                                <small>
+                                    ${
+                                        data.createdAt
+                                            ?.toDate?.()
+                                            .toLocaleString("id-ID") || ""
+                                    }
+                                </small>
+
+                                <p>${esc(data.message)}</p>
+
+                                <button
+                                    class="btn sm red"
+                                    data-d="${doc.id}"
+                                    type="button"
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                        `;
+                    }).join("")
+                    || "<p>Belum ada masukan.</p>"
+                }
+            `;
+
+            container.querySelectorAll("[data-d]").forEach(button => {
+                button.onclick = async () => {
+                    if (!confirm("Hapus masukan ini?")) {
+                        return;
+                    }
+
+                    try {
+                        await F.deleteDoc(
+                            F.doc(
+                                db,
+                                "feedback",
+                                button.dataset.d
+                            )
+                        );
+
+                        toast("Masukan berhasil dihapus.");
+                        await fbk(container);
+                    } catch (error) {
+                        console.error(error);
+                        toast("Gagal menghapus masukan.", true);
+                    }
+                };
+            });
+        }
+    </script>
+</body>
+</html>
