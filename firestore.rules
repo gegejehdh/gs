@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin(){return request.auth!=null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));}
+    match /admins/{uid}{allow read: if request.auth!=null && request.auth.uid==uid; allow write: if false;}
+    match /settings/{d}{allow read: if true; allow write: if isAdmin();}
+    match /activities/{d}{allow read: if resource.data.published==true || isAdmin(); allow write: if isAdmin();}
+    match /gallery/{d}{allow read: if true; allow write: if isAdmin();}
+    match /members/{d}{
+      allow read, update, delete: if isAdmin();
+      allow create: if get(/databases/$(database)/documents/settings/site).data.regOpen==true
+        && request.resource.data.keys().hasOnly(['name','kelas','phone','reason','createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size()>=2 && request.resource.data.name.size()<=100
+        && request.resource.data.kelas is string && request.resource.data.kelas.size()<=20
+        && request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{8,15}$')
+        && request.resource.data.reason is string && request.resource.data.reason.size()>=1 && request.resource.data.reason.size()<=1000
+        && request.resource.data.createdAt==request.time;
+    }
+    match /feedback/{d}{
+      allow read, update, delete: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['name','message','createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size()<=100
+        && request.resource.data.message is string && request.resource.data.message.size()>=5 && request.resource.data.message.size()<=1000
+        && request.resource.data.createdAt==request.time;
+    }
+  }
+}
