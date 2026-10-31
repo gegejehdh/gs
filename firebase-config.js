@@ -1,3 +1,4 @@
+Firebase config · JS
 // Isi dengan konfigurasi dari Firebase Console > Project settings > Your apps (Web)
 export const firebaseConfig = {
   apiKey: "ISI_API_KEY",
@@ -5,3 +6,4 @@ export const firebaseConfig = {
   projectId: "ISI",
   appId: "ISI"
 };
+ 
