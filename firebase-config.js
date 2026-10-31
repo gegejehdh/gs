@@ -1,9 +1,9 @@
-Firebase config · JS
-// Isi dengan konfigurasi dari Firebase Console > Project settings > Your apps (Web)
 export const firebaseConfig = {
-  apiKey: "ISI_API_KEY",
-  authDomain: "ISI.firebaseapp.com",
-  projectId: "ISI",
-  appId: "ISI"
+  apiKey: "AIzaSyBOVl7wiZ92aDFTqI_TT6okAhTsmk_pVIY",
+  authDomain: "kir-smanca.firebaseapp.com",
+  projectId: "kir-smanca",
+  storageBucket: "kir-smanca.firebasestorage.app",
+  messagingSenderId: "652728930378",
+  appId: "1:652728930378:web:7dea14e475afca339c56b3",
+  measurementId: "G-TSDQ8M0XQD"
 };
- 
